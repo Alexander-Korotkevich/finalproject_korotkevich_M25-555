@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "finalproject-korotkevich-m25-555"
+version = "0.1.0"
+description = ""
+authors = ["Alexander Korotkevich <65502660+Alexander-Korotkevich@users.noreply.github.com>"]
+readme = "README.md"
+packages = [
+    { include = "src" }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.12"
+
+[tool.poetry.scripts]
+project = "src.main:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+exclude = ["venv", ".venv", "dist", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = [] 
+
+[dependency-groups]
+dev = [
+    "ruff (>=0.14.1,<0.15.0)"
+]
