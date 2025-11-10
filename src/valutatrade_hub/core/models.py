@@ -1,5 +1,7 @@
-from datetime import datetime
 import hashlib
+from datetime import datetime
+
+from src.valutatrade_hub.core.utils import validate_positive_number
 
 
 class User:
@@ -84,3 +86,47 @@ class User:
     def verify_password(self, password: str) -> bool:
         """Проверяет пароль пользователя"""
         return self._hashed_password == self._hash_password(password)
+
+
+class Wallet:
+    """Кошелек пользователя"""
+
+    def __init__(self, currency_code: str, balance=0.0):
+        """
+        Инициализация кошелька
+
+        Args:
+            currency_code: код валюты
+            balance: баланс кошелька
+        """
+        self.currency_code = currency_code
+        self._balance = balance
+
+    @property
+    def currency_code(self):
+        return self._currency_code
+
+    @property
+    def balance(self):
+        return self._balance
+
+    @balance.setter
+    def balance(self, balance: float):
+        self._balance = validate_positive_number(balance, "баланса")
+
+    def deposit(self, amount: float):
+        """Пополняет кошелек"""
+        self._balance += validate_positive_number(amount, "суммы")
+
+    def withdraw(self, amount: float):
+        """Снимает деньги со счета"""
+        if self._balance < amount:
+            raise ValueError("Недостаточно средств на кошельке")
+        self._balance -= validate_positive_number(amount, "суммы")
+
+    def get_balance_info(self):
+        """Возвращает информацию о балансе кошелька"""
+        return {
+            "currency_code": self._currency_code,
+            "balance": self._balance,
+        }
