@@ -1,6 +1,7 @@
 import hashlib
 from datetime import datetime
 
+from src.valutatrade_hub.const import EXCHANGE_RATES
 from src.valutatrade_hub.core.utils import validate_positive_number
 
 
@@ -99,7 +100,7 @@ class Wallet:
             currency_code: код валюты
             balance: баланс кошелька
         """
-        self.currency_code = currency_code
+        self._currency_code = currency_code.upper()
         self._balance = balance
 
     @property
@@ -130,3 +131,77 @@ class Wallet:
             "currency_code": self._currency_code,
             "balance": self._balance,
         }
+
+
+class Portfolio:
+    """Портфель пользователя"""
+
+    def __init__(self, user_id: int, wallets: dict[str, Wallet]):
+        """
+        Инициализация портфеля
+
+        Args:
+            user_id: уникальный идентификатор пользователя
+            wallets: кошельки пользователя
+        """
+        self._user_id = user_id
+        self._wallets = wallets
+
+    @property
+    def user_id(self):
+        return self._user_id
+
+    @property
+    def user(self):
+        return {"user_id": self._user_id, "wallets": self._wallets}
+
+    @property
+    def wallets(self):
+        return self._wallets.copy()
+
+    def add_currency(self, currency_code: str):
+        """Добавляет валюту в портфель"""
+
+        if not currency_code:
+            raise ValueError("Код валюты не может быть пустым")
+
+        if currency_code in self._wallets:
+            raise ValueError("Валюта уже добавлена в портфель")
+
+        self._wallets[currency_code] = Wallet(currency_code)
+
+    def _convert_currency(self, amount: float, from_currency: str, to_currency: str):
+        """Конвертирует валюту"""
+        if from_currency == to_currency:
+            return amount
+
+        rate_key = f"{from_currency}_{to_currency}"
+
+        if rate_key not in EXCHANGE_RATES:
+            raise ValueError(
+                f"Невозможно конвертировать валюту {from_currency} в {to_currency}"
+            )
+
+        rate = EXCHANGE_RATES[rate_key]["rate"]
+        amount *= rate
+
+        return amount
+
+    def get_total_value(self, base_currency="USD"):
+        """Возвращает общую стоимость портфеля в указанной валюте"""
+
+        total_value = 0.0
+        for wallet in self._wallets.values():
+            wallet_value = self._convert_currency(
+                wallet.balance, wallet.currency_code, base_currency
+            )
+            total_value += wallet_value
+
+        return total_value
+
+    def get_wallet(self, currency_code: str):
+        """Возвращает кошелек пользователя по коду валюты"""
+
+        if currency_code not in self._wallets:
+            raise ValueError("Валюта не найдена в портфеле")
+        return self._wallets[currency_code]
