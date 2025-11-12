@@ -18,3 +18,9 @@ EXCHANGE_RATES = {
     "source": "ParserService",  # кто обновил данные (Parser Service)
     "last_refresh": "2025-10-09T10:35:00",  # время последнего обновления всех курсов
 }
+
+DATA_DIR = "data"
+
+USERS_FILE = "users.json"
+PORTFOLIOS_FILE = "portfolios.json"
+RATES_FILE = "rates.json"
