@@ -37,3 +37,11 @@ class FileStorage:
             return {}
         except Exception as e:
             raise Exception(f"Неожиданная ошибка: {e}")
+
+
+def welcome():
+    """Вывод приветствия"""
+    print("*" * 35)
+    print("Добро пожаловать в Valutatrade Hub!")
+    print("*" * 35)
+    print("\n")

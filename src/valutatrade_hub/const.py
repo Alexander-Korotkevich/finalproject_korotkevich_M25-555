@@ -24,3 +24,5 @@ DATA_DIR = "data"
 USERS_FILE = "users.json"
 PORTFOLIOS_FILE = "portfolios.json"
 RATES_FILE = "rates.json"
+
+CMD_EXIT = "exit"
