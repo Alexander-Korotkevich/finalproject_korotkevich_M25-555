@@ -1,8 +1,8 @@
-import hashlib
 from datetime import datetime
 
 from src.valutatrade_hub.const import EXCHANGE_RATES
-from src.valutatrade_hub.core.utils import validate_positive_number
+from src.valutatrade_hub.core.decorators import error_handler
+from src.valutatrade_hub.core.utils import hashed_password, validate_positive_number
 
 
 class User:
@@ -40,6 +40,7 @@ class User:
     def username(self) -> str:
         return self._username
 
+    @error_handler
     @username.setter
     def username(self, username: str):
         if not username or not username.strip():
@@ -66,6 +67,7 @@ class User:
             "registration_date": self._registration_date,
         }
 
+    @error_handler
     def change_password(self, new_password: str):
         """Изменяет пароль пользователя"""
         if (
@@ -76,17 +78,12 @@ class User:
             raise ValueError("Пароль должен содержать не менее 4 символов")
 
         # Хешируем новый пароль с существующей солью
-        self._hashed_password = self._hash_password(new_password)
+        self._hashed_password = hashed_password(new_password, self._salt)
         pass
-
-    def _hash_password(self, password: str) -> str:
-        """Хеширует пароль с солью"""
-        password_salted = password + self._salt
-        return hashlib.sha256(password_salted.encode()).hexdigest()
 
     def verify_password(self, password: str) -> bool:
         """Проверяет пароль пользователя"""
-        return self._hashed_password == self._hash_password(password)
+        return self._hashed_password == hashed_password(password, self._salt)
 
 
 class Wallet:
@@ -119,6 +116,7 @@ class Wallet:
         """Пополняет кошелек"""
         self._balance += validate_positive_number(amount, "суммы")
 
+    @error_handler
     def withdraw(self, amount: float):
         """Снимает деньги со счета"""
         if self._balance < amount:
@@ -159,6 +157,7 @@ class Portfolio:
     def wallets(self):
         return self._wallets.copy()
 
+    @error_handler
     def add_currency(self, currency_code: str):
         """Добавляет валюту в портфель"""
 
@@ -170,6 +169,7 @@ class Portfolio:
 
         self._wallets[currency_code] = Wallet(currency_code)
 
+    @error_handler
     def _convert_currency(self, amount: float, from_currency: str, to_currency: str):
         """Конвертирует валюту"""
         if from_currency == to_currency:
@@ -199,6 +199,7 @@ class Portfolio:
 
         return total_value
 
+    @error_handler
     def get_wallet(self, currency_code: str):
         """Возвращает кошелек пользователя по коду валюты"""
 

@@ -20,9 +20,18 @@ EXCHANGE_RATES = {
 }
 
 DATA_DIR = "data"
+ROOT_DIR = "src"
 
 USERS_FILE = "users.json"
 PORTFOLIOS_FILE = "portfolios.json"
 RATES_FILE = "rates.json"
 
 CMD_EXIT = "exit"
+CMD_REGISTER = "register"
+
+
+MIN_PASSWORD_LENGTH = 4
+
+
+KEY_WORD_USERNAME = "username"
+KEY_WORD_PASSWORD = "password"
