@@ -1,8 +1,7 @@
-from datetime import datetime
 import os
 import src.valutatrade_hub.const as const
 from src.valutatrade_hub.core import models
-from src.valutatrade_hub.core.decorators import error_handler
+from src.valutatrade_hub.core.decorators import check_auth, error_handler
 import src.valutatrade_hub.core.utils as utils
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -90,3 +89,52 @@ def login(username: str | None, password: str | None):
         salt=current_user["salt"],
         registration_date=current_user["registration_date"],
     )
+
+
+@error_handler
+@check_auth
+def show_portfolio(user: models.User, base_currency=const.BASE_CURRENCY):
+    """Показать портфель"""
+
+    portfolios = storage.load(const.PORTFOLIOS_FILE) or []
+
+    current_portfolio = None
+
+    for _portfolio in portfolios:
+        if _portfolio["user_id"] == user.user_id:
+            current_portfolio = _portfolio
+            break
+
+    if not current_portfolio:
+        raise ValueError("Портфель не найден")
+
+    if not current_portfolio["wallets"]:
+        raise ValueError("В портфеле нет кошельков")
+
+    if base_currency not in const.CURRENCY:
+        raise ValueError(f"Неизвестная базовая валюта '{base_currency}'")
+
+    rates = storage.load(const.RATES_FILE) or {}
+
+    portfolio = models.Portfolio(
+        user_id=current_portfolio["user_id"],
+        wallets=current_portfolio["wallets"],
+    )
+
+    print(f"Портфель пользователя '{user.username}' (база: {base_currency}):")
+
+    for key, value in portfolio.wallets.items():
+        converted_currency = utils.convert_currency(
+            value.get("balance"), key, base_currency, rates
+        )
+        if converted_currency:
+            print(
+                f"- {key}: {value.get("balance")}  → {converted_currency} {base_currency}"  # noqa E501
+            )
+
+    print("---------------------------------")
+
+    total_value = portfolio.get_total_value(rates, base_currency)
+
+    if total_value:
+        print(f"ИТОГО: {total_value} {base_currency}")

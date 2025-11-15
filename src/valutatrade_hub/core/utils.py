@@ -109,6 +109,24 @@ def create_portfolio(user_id: int):
     return {
         "user_id": user_id,
         "wallets": {
-            "USD": {"balance": 0.0},
+            const.BASE_CURRENCY: {"balance": 0.0},
         },
     }
+
+
+def convert_currency(amount: float, from_currency: str, to_currency: str, rates):
+    """Конвертирует валюту"""
+    if from_currency == to_currency:
+        return amount
+
+    rate_key = f"{from_currency}_{to_currency}"
+
+    if rate_key not in rates:
+        raise ValueError(
+            f"Невозможно конвертировать валюту {from_currency} в {to_currency}"
+        )
+
+    rate = rates[rate_key]["rate"]
+    amount *= rate
+
+    return amount

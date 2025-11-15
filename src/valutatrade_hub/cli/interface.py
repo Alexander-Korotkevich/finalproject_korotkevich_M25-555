@@ -30,6 +30,12 @@ def run():
                     command_args.get(const.KEY_WORD_USERNAME),
                     command_args.get(const.KEY_WORD_PASSWORD),
                 )
+            case const.CMD_SHOW_PORTFOLIO:
+                base_currency = command_args.get(const.KEY_WORD_BASE)
+                if base_currency:
+                    usecases.show_portfolio(user, command_args.get(const.KEY_WORD_BASE))
+                else:
+                    usecases.show_portfolio(user)
             case const.CMD_EXIT:
                 is_active = usecases.exit()
                 continue

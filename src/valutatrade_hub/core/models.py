@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Any
 
-from src.valutatrade_hub.const import EXCHANGE_RATES
+from src.valutatrade_hub.core import utils
 from src.valutatrade_hub.core.decorators import error_handler
 from src.valutatrade_hub.core.utils import hashed_password, validate_positive_number
 
@@ -40,7 +41,6 @@ class User:
     def username(self) -> str:
         return self._username
 
-    @error_handler
     @username.setter
     def username(self, username: str):
         if not username or not username.strip():
@@ -134,7 +134,7 @@ class Wallet:
 class Portfolio:
     """Портфель пользователя"""
 
-    def __init__(self, user_id: int, wallets: dict[str, Wallet]):
+    def __init__(self, user_id: int, wallets: dict[str, Any]):
         """
         Инициализация портфеля
 
@@ -167,34 +167,26 @@ class Portfolio:
         if currency_code in self._wallets:
             raise ValueError("Валюта уже добавлена в портфель")
 
-        self._wallets[currency_code] = Wallet(currency_code)
+        self._wallets[currency_code] = {"balance": 0.0}
 
     @error_handler
-    def _convert_currency(self, amount: float, from_currency: str, to_currency: str):
-        """Конвертирует валюту"""
-        if from_currency == to_currency:
-            return amount
-
-        rate_key = f"{from_currency}_{to_currency}"
-
-        if rate_key not in EXCHANGE_RATES:
-            raise ValueError(
-                f"Невозможно конвертировать валюту {from_currency} в {to_currency}"
-            )
-
-        rate = EXCHANGE_RATES[rate_key]["rate"]
-        amount *= rate
-
-        return amount
-
-    def get_total_value(self, base_currency="USD"):
+    def get_total_value(
+        self,
+        rates,
+        base_currency="USD",
+    ):
         """Возвращает общую стоимость портфеля в указанной валюте"""
 
         total_value = 0.0
-        for wallet in self._wallets.values():
-            wallet_value = self._convert_currency(
-                wallet.balance, wallet.currency_code, base_currency
+        for key, value in self._wallets.items():
+            wallet_value = utils.convert_currency(
+                value.get("balance"), key, base_currency, rates
             )
+
+            if not wallet_value:
+               total_value = None
+               break
+            
             total_value += wallet_value
 
         return total_value

@@ -1,24 +1,3 @@
-EXCHANGE_RATES = {
-    "EUR_USD": {
-        "rate": 1.0786,  # 1 евро = 1.0786 доллара
-        "updated_at": "2025-10-09T10:30:00",
-    },
-    "BTC_USD": {
-        "rate": 59337.21,  # 1 биткоин = 59337.21 долларов
-        "updated_at": "2025-10-09T10:29:42",
-    },
-    "RUB_USD": {
-        "rate": 0.01016,  # 1 рубль = 0.01016 доллара
-        "updated_at": "2025-10-09T10:31:12",
-    },
-    "ETH_USD": {
-        "rate": 3720.00,  # 1 эфириум = 3720 долларов
-        "updated_at": "2025-10-09T10:35:00",
-    },
-    "source": "ParserService",  # кто обновил данные (Parser Service)
-    "last_refresh": "2025-10-09T10:35:00",  # время последнего обновления всех курсов
-}
-
 DATA_DIR = "data"
 ROOT_DIR = "src"
 
@@ -29,6 +8,7 @@ RATES_FILE = "rates.json"
 CMD_EXIT = "exit"
 CMD_REGISTER = "register"
 CMD_LOGIN = "login"
+CMD_SHOW_PORTFOLIO = "show-portfolio"
 
 
 MIN_PASSWORD_LENGTH = 4
@@ -36,3 +16,14 @@ MIN_PASSWORD_LENGTH = 4
 
 KEY_WORD_USERNAME = "username"
 KEY_WORD_PASSWORD = "password"
+KEY_WORD_BASE = "base"
+
+BASE_CURRENCY = "USD"
+
+CURRENCY = (
+    "USD",
+    "EUR",
+    "RUB",
+    "BTC",
+    "ETH",
+)
