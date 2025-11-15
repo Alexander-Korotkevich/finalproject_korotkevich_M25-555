@@ -1,3 +1,4 @@
+from datetime import datetime
 import hashlib
 import json
 import os
@@ -90,3 +91,24 @@ def parse_args(args: list[str]):
             i += 1  # пропускаем не-аргументы
 
     return result
+
+
+def create_user(user_id: int, username: str, hashed_password: str, salt: str):
+    """Создание пользователя"""
+    return {
+        "user_id": user_id,
+        "username": username,
+        "hashed_password": hashed_password,
+        "salt": salt,
+        "registration_date": datetime.now().isoformat(),
+    }
+
+
+def create_portfolio(user_id: int):
+    """Создание портфеля"""
+    return {
+        "user_id": user_id,
+        "wallets": {
+            "USD": {"balance": 0.0},
+        },
+    }

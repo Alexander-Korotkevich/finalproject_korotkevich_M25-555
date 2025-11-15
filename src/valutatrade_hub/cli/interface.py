@@ -2,13 +2,14 @@ import prompt  # type: ignore
 import shlex
 
 import src.valutatrade_hub.const as const
+from src.valutatrade_hub.core import models
 import src.valutatrade_hub.core.usecases as usecases
 import src.valutatrade_hub.core.utils as utils
 
 
 def run():
     is_active = True
-    user = None
+    user: models.User | None = None
 
     utils.welcome()
 
