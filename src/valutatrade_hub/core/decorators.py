@@ -1,5 +1,6 @@
 import functools
-from typing import Any, Callable, ParamSpec, TypeVar, cast
+from typing import Any, Callable, TypeVar
+
 from src.valutatrade_hub.core.exceptions import NotAuthorizedError
 
 
@@ -10,7 +11,7 @@ def error_handler(func):
             return func(*args, **kwargs)
         except RuntimeError as e:
             print(f"Системная ошибка: {e}")
-        except NotAuthorizedError as e:
+        except NotAuthorizedError:
             print("Сначала выполните login")
         except ValueError as e:
             print(f"Ошибка валидации: {e}")

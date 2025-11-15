@@ -112,6 +112,7 @@ class Wallet:
     def balance(self, balance: float):
         self._balance = validate_positive_number(balance, "баланса")
 
+    @error_handler
     def deposit(self, amount: float):
         """Пополняет кошелек"""
         self._balance += validate_positive_number(amount, "суммы")
@@ -183,7 +184,7 @@ class Portfolio:
                 value.get("balance"), key, base_currency, rates
             )
 
-            if not wallet_value:
+            if wallet_value is None:
                total_value = None
                break
             

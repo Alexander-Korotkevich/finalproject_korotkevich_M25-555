@@ -1,8 +1,9 @@
 import os
+
 import src.valutatrade_hub.const as const
+import src.valutatrade_hub.core.utils as utils
 from src.valutatrade_hub.core import models
 from src.valutatrade_hub.core.decorators import check_auth, error_handler
-import src.valutatrade_hub.core.utils as utils
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.dirname(current_dir)
@@ -97,18 +98,9 @@ def show_portfolio(user: models.User, base_currency=const.BASE_CURRENCY):
     """Показать портфель"""
 
     portfolios = storage.load(const.PORTFOLIOS_FILE) or []
+    user_portfolio = utils.get_user_portfolio(portfolios, user.user_id)
 
-    current_portfolio = None
-
-    for _portfolio in portfolios:
-        if _portfolio["user_id"] == user.user_id:
-            current_portfolio = _portfolio
-            break
-
-    if not current_portfolio:
-        raise ValueError("Портфель не найден")
-
-    if not current_portfolio["wallets"]:
+    if not user_portfolio.wallets:
         raise ValueError("В портфеле нет кошельков")
 
     if base_currency not in const.CURRENCY:
@@ -116,25 +108,76 @@ def show_portfolio(user: models.User, base_currency=const.BASE_CURRENCY):
 
     rates = storage.load(const.RATES_FILE) or {}
 
-    portfolio = models.Portfolio(
-        user_id=current_portfolio["user_id"],
-        wallets=current_portfolio["wallets"],
-    )
-
     print(f"Портфель пользователя '{user.username}' (база: {base_currency}):")
 
-    for key, value in portfolio.wallets.items():
+    for key, value in user_portfolio.wallets.items():
         converted_currency = utils.convert_currency(
             value.get("balance"), key, base_currency, rates
         )
-        if converted_currency:
+        if converted_currency is not None:
             print(
                 f"- {key}: {value.get("balance")}  → {converted_currency} {base_currency}"  # noqa E501
             )
 
     print("---------------------------------")
 
-    total_value = portfolio.get_total_value(rates, base_currency)
+    total_value = user_portfolio.get_total_value(rates, base_currency)
 
-    if total_value:
+    if total_value is not None:
         print(f"ИТОГО: {total_value} {base_currency}")
+
+
+@error_handler
+@check_auth
+def buy(user, currency: str, amount: float):
+    """Купить валюту"""
+
+    if currency not in const.CURRENCY:
+        raise ValueError(f"Неизвестная валюта '{currency}'")
+
+    utils.validate_positive_number(amount, "количества валюты")
+
+    portfolios = storage.load(const.PORTFOLIOS_FILE) or []
+    user_portfolio = utils.get_user_portfolio(portfolios, user.user_id)
+
+    if currency not in user_portfolio.wallets:
+        user_portfolio.add_currency(currency)
+
+    cur_wallet_data = user_portfolio.get_wallet(currency)
+    usd_wallet_data = user_portfolio.get_wallet(const.BASE_CURRENCY)
+
+    rates = storage.load(const.RATES_FILE) or {}
+    usd_amount = utils.convert_currency(amount, currency, const.BASE_CURRENCY, rates)
+
+    if usd_amount is None:
+        raise ValueError(f"Невозможно приобрести {amount} {currency}")
+
+    if usd_wallet_data.get("balance") < usd_amount:
+        raise ValueError(f"Недостаточно средств для приобретения {amount} {currency}")
+
+    usd_wallet = models.Wallet(const.BASE_CURRENCY, usd_wallet_data.get("balance"))
+    usd_wallet.withdraw(usd_amount)
+
+    cur_wallet = models.Wallet(currency, cur_wallet_data.get("balance"))
+    cur_wallet.deposit(amount)
+
+    rate = utils.get_rate(currency, const.BASE_CURRENCY, rates)
+
+    print(
+        f"Покупка выполнена: {amount} {currency} по курсу {rate} {const.BASE_CURRENCY}/{currency}"  # noqa E501
+    )
+    print("Изменения в портфеле:")
+    print(
+        f"- {currency}: было {cur_wallet_data.get('balance')} → стало {cur_wallet.balance}"  # noqa E501
+    )
+    print(f"Оценочная стоимость покупки: {usd_amount} USD")
+
+    for _portfolio in portfolios:
+        if _portfolio.get("user_id") == user.user_id:
+            _portfolio.get("wallets")[currency] = {"balance": cur_wallet.balance}
+            _portfolio.get("wallets")[const.BASE_CURRENCY] = {
+                "balance": usd_wallet.balance
+            }
+            break
+
+    storage.save(const.PORTFOLIOS_FILE, portfolios)

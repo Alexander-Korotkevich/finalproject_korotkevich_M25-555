@@ -1,10 +1,11 @@
-import prompt  # type: ignore
 import shlex
 
+import prompt  # type: ignore
+
 import src.valutatrade_hub.const as const
-from src.valutatrade_hub.core import models
 import src.valutatrade_hub.core.usecases as usecases
 import src.valutatrade_hub.core.utils as utils
+from src.valutatrade_hub.core import models
 
 
 def run():
@@ -36,6 +37,12 @@ def run():
                     usecases.show_portfolio(user, command_args.get(const.KEY_WORD_BASE))
                 else:
                     usecases.show_portfolio(user)
+            case const.CMD_BUY:
+                usecases.buy(
+                    user,
+                    command_args.get(const.KEY_WORD_CURRENCY),
+                    float(command_args.get(const.KEY_WORD_AMOUNT) or 0),
+                )
             case const.CMD_EXIT:
                 is_active = usecases.exit()
                 continue

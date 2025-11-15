@@ -1,14 +1,14 @@
-from datetime import datetime
 import hashlib
 import json
 import os
+from datetime import datetime
 from typing import Any
 
 from src.valutatrade_hub import const
+from src.valutatrade_hub.core import models
 from src.valutatrade_hub.core.decorators import error_handler
 
 
-@error_handler
 def validate_positive_number(value: float, entity_name: str):
     """Валидация положительного числа"""
     import math
@@ -113,12 +113,26 @@ def create_portfolio(user_id: int):
         },
     }
 
+def get_user_portfolio(portfolios, user_id: int):
+    """Получение портфеля пользователя"""
 
-def convert_currency(amount: float, from_currency: str, to_currency: str, rates):
-    """Конвертирует валюту"""
-    if from_currency == to_currency:
-        return amount
+    user_portfolio = None
 
+    for _portfolio in portfolios:
+        if _portfolio["user_id"] == user_id:
+            user_portfolio = models.Portfolio(
+                user_id=_portfolio["user_id"],
+                wallets=_portfolio["wallets"],
+            )
+            break
+
+    if not user_portfolio:
+        raise ValueError("Портфель не найден")
+
+    return user_portfolio
+
+
+def get_rate(from_currency: str, to_currency: str, rates):
     rate_key = f"{from_currency}_{to_currency}"
 
     if rate_key not in rates:
@@ -126,7 +140,16 @@ def convert_currency(amount: float, from_currency: str, to_currency: str, rates)
             f"Невозможно конвертировать валюту {from_currency} в {to_currency}"
         )
 
-    rate = rates[rate_key]["rate"]
+    return rates[rate_key]["rate"]
+
+
+def convert_currency(amount: float, from_currency: str, to_currency: str, rates):
+    """Конвертирует валюту"""
+    if from_currency == to_currency:
+        return amount
+
+    rate = get_rate(from_currency, to_currency, rates)
+
     amount *= rate
 
     return amount
