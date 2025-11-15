@@ -3,6 +3,7 @@ import json
 import os
 from typing import Any
 
+from src.valutatrade_hub import const
 from src.valutatrade_hub.core.decorators import error_handler
 
 

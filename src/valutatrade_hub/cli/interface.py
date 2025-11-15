@@ -8,6 +8,7 @@ import src.valutatrade_hub.core.utils as utils
 
 def run():
     is_active = True
+    user = None
 
     utils.welcome()
 
@@ -20,6 +21,11 @@ def run():
         match (command):
             case const.CMD_REGISTER:
                 usecases.register(
+                    command_args.get(const.KEY_WORD_USERNAME),
+                    command_args.get(const.KEY_WORD_PASSWORD),
+                )
+            case const.CMD_LOGIN:
+                user = usecases.login(
                     command_args.get(const.KEY_WORD_USERNAME),
                     command_args.get(const.KEY_WORD_PASSWORD),
                 )

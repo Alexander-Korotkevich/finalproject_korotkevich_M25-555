@@ -28,7 +28,7 @@ def register(username: str | None, password: str | None):
             f"Пароль должен содержать не менее {const.MIN_PASSWORD_LENGTH} символов"
         )
 
-    users = storage.load("users.json") or []
+    users = storage.load(const.USERS_FILE) or []
 
     if users and any(user["username"] == username for user in users):
         raise ValueError(f"Имя пользователя '{username}' уже занято")
@@ -39,17 +39,46 @@ def register(username: str | None, password: str | None):
     user = {
         "user_id": id,
         "username": username,
-        "hashed_password": utils.hashed_password(password, salt),
+        "hashed_password": utils.hashed_password(password or "", salt),
         "salt": salt,
         "registration_date": datetime.now().isoformat(),
     }
 
     users.append(user)
 
-    result = storage.save("users.json", users)
+    result = storage.save(const.USERS_FILE, users)
 
     if result:
         print(
             f"Пользователь '{username}' зарегистрирован (id={id}).",
             f"Войдите: login --username {username} --password **** ",
         )
+
+
+@error_handler
+def login(username: str | None, password: str | None):
+    """Вход в систему"""
+
+    if (not username or not password) or not username.strip() or not password.strip():
+        raise ValueError("Пожалуйста, введите имя пользователя и пароль")
+
+    users = storage.load(const.USERS_FILE) or []
+
+    current_user = None
+
+    for user in users:
+        if user["username"] == username:
+            current_user = user
+            break
+
+    if not current_user:
+        raise ValueError(f"Пользователь '{username}' не найден")
+
+    hashed_password = utils.hashed_password(password or "", current_user["salt"])
+
+    if current_user["hashed_password"] != hashed_password:
+        raise ValueError("Неверный пароль")
+
+    print(f"Вы вошли как '{username}'")
+
+    return current_user

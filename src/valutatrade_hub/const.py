@@ -28,6 +28,7 @@ RATES_FILE = "rates.json"
 
 CMD_EXIT = "exit"
 CMD_REGISTER = "register"
+CMD_LOGIN = "login"
 
 
 MIN_PASSWORD_LENGTH = 4
