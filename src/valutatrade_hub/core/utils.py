@@ -5,15 +5,14 @@ from datetime import datetime
 from typing import Any
 
 from src.valutatrade_hub import const
-from src.valutatrade_hub.core import models
 from src.valutatrade_hub.core.decorators import error_handler
 
 
-def validate_positive_number(value: float, entity_name: str):
+def validate_positive_number(value: float, entity_name: str, no_zero: bool = False):
     """Валидация положительного числа"""
     import math
 
-    if (not isinstance(value, float)) or math.isnan(value) or value < 0:
+    if (not isinstance(value, float)) or math.isnan(value) or (value <= 0 if no_zero else value < 0):
         raise ValueError(f"Значение {entity_name} должно быть положительным числом")
 
     return value
@@ -113,14 +112,15 @@ def create_portfolio(user_id: int):
         },
     }
 
-def get_user_portfolio(portfolios, user_id: int):
+
+def get_user_portfolio(portfolios, user_id: int, portfolio_class):
     """Получение портфеля пользователя"""
 
     user_portfolio = None
 
     for _portfolio in portfolios:
         if _portfolio["user_id"] == user_id:
-            user_portfolio = models.Portfolio(
+            user_portfolio = portfolio_class(
                 user_id=_portfolio["user_id"],
                 wallets=_portfolio["wallets"],
             )

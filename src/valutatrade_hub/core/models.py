@@ -158,7 +158,6 @@ class Portfolio:
     def wallets(self):
         return self._wallets.copy()
 
-    @error_handler
     def add_currency(self, currency_code: str):
         """Добавляет валюту в портфель"""
 
@@ -170,7 +169,6 @@ class Portfolio:
 
         self._wallets[currency_code] = {"balance": 0.0}
 
-    @error_handler
     def get_total_value(
         self,
         rates,
@@ -192,7 +190,6 @@ class Portfolio:
 
         return total_value
 
-    @error_handler
     def get_wallet(self, currency_code: str):
         """Возвращает кошелек пользователя по коду валюты"""
 

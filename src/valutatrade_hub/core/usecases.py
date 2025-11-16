@@ -98,7 +98,9 @@ def show_portfolio(user: models.User, base_currency=const.BASE_CURRENCY):
     """Показать портфель"""
 
     portfolios = storage.load(const.PORTFOLIOS_FILE) or []
-    user_portfolio = utils.get_user_portfolio(portfolios, user.user_id)
+    user_portfolio = utils.get_user_portfolio(
+        portfolios, user.user_id, models.Portfolio
+    )
 
     if not user_portfolio.wallets:
         raise ValueError("В портфеле нет кошельков")
@@ -129,16 +131,18 @@ def show_portfolio(user: models.User, base_currency=const.BASE_CURRENCY):
 
 @error_handler
 @check_auth
-def buy(user, currency: str, amount: float):
+def buy(user: models.User, currency: str, amount: float):
     """Купить валюту"""
 
     if currency not in const.CURRENCY:
         raise ValueError(f"Неизвестная валюта '{currency}'")
 
-    utils.validate_positive_number(amount, "количества валюты")
+    utils.validate_positive_number(amount, "количества валюты", no_zero=True)
 
     portfolios = storage.load(const.PORTFOLIOS_FILE) or []
-    user_portfolio = utils.get_user_portfolio(portfolios, user.user_id)
+    user_portfolio = utils.get_user_portfolio(
+        portfolios, user.user_id, models.Portfolio
+    )
 
     if currency not in user_portfolio.wallets:
         user_portfolio.add_currency(currency)
@@ -163,6 +167,16 @@ def buy(user, currency: str, amount: float):
 
     rate = utils.get_rate(currency, const.BASE_CURRENCY, rates)
 
+    for _portfolio in portfolios:
+        if _portfolio.get("user_id") == user.user_id:
+            _portfolio.get("wallets")[currency] = {"balance": cur_wallet.balance}
+            _portfolio.get("wallets")[const.BASE_CURRENCY] = {
+                "balance": usd_wallet.balance
+            }
+            break
+
+    storage.save(const.PORTFOLIOS_FILE, portfolios)
+
     print(
         f"Покупка выполнена: {amount} {currency} по курсу {rate} {const.BASE_CURRENCY}/{currency}"  # noqa E501
     )
@@ -171,6 +185,47 @@ def buy(user, currency: str, amount: float):
         f"- {currency}: было {cur_wallet_data.get('balance')} → стало {cur_wallet.balance}"  # noqa E501
     )
     print(f"Оценочная стоимость покупки: {usd_amount} USD")
+
+
+@error_handler
+@check_auth
+def sell(user: models.User, currency: str, amount: float):
+    """Продать валюту"""
+
+    if currency not in const.CURRENCY:
+        raise ValueError(f"Неизвестная валюта '{currency}'")
+
+    utils.validate_positive_number(amount, "количества валюты", no_zero=True)
+
+    portfolios = storage.load(const.PORTFOLIOS_FILE) or []
+    user_portfolio = utils.get_user_portfolio(
+        portfolios, user.user_id, models.Portfolio
+    )
+
+    try:
+        cur_wallet_data = user_portfolio.get_wallet(currency)
+    except ValueError:
+        raise ValueError(
+            f"У вас нет кошелька '{currency}'. Добавьте валюту: она создаётся автоматически при первой покупке."  # noqa E501
+        )
+
+    usd_wallet_data = user_portfolio.get_wallet(const.BASE_CURRENCY)
+
+    if cur_wallet_data.get("balance") < amount:
+        raise ValueError(
+            f"Недостаточно средств: доступно {cur_wallet_data.get("balance")} {currency}, требуется {amount} {currency}"  # noqa E501
+        )
+
+    cur_wallet = models.Wallet(currency, cur_wallet_data.get("balance"))
+    cur_wallet.withdraw(amount)
+
+    rates = storage.load(const.RATES_FILE) or {}
+    rate = utils.get_rate(currency, const.BASE_CURRENCY, rates)
+
+    usd_amount = utils.convert_currency(amount, currency, const.BASE_CURRENCY, rates)
+
+    usd_wallet = models.Wallet(const.BASE_CURRENCY, usd_wallet_data.get("balance"))
+    usd_wallet.withdraw(usd_amount)
 
     for _portfolio in portfolios:
         if _portfolio.get("user_id") == user.user_id:
@@ -181,3 +236,12 @@ def buy(user, currency: str, amount: float):
             break
 
     storage.save(const.PORTFOLIOS_FILE, portfolios)
+
+    print(
+        f"Продажа выполнена: {amount} {currency} по курсу {rate} {const.BASE_CURRENCY}/{currency}"  # noqa E501
+    )
+    print("Изменения в портфеле:")
+    print(
+        f"- {currency}: было {cur_wallet_data.get('balance')} → стало {cur_wallet.balance}"  # noqa E501
+    )
+    print(f"Оценочная выручка: {usd_amount} USD")

@@ -10,6 +10,7 @@ CMD_REGISTER = "register"
 CMD_LOGIN = "login"
 CMD_SHOW_PORTFOLIO = "show-portfolio"
 CMD_BUY = "buy"
+CMD_SELL = "sell"
 
 
 MIN_PASSWORD_LENGTH = 4

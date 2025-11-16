@@ -43,6 +43,12 @@ def run():
                     command_args.get(const.KEY_WORD_CURRENCY),
                     float(command_args.get(const.KEY_WORD_AMOUNT) or 0),
                 )
+            case const.CMD_SELL:
+                usecases.sell(
+                    user,
+                    command_args.get(const.KEY_WORD_CURRENCY),
+                    float(command_args.get(const.KEY_WORD_AMOUNT) or 0),
+                )
             case const.CMD_EXIT:
                 is_active = usecases.exit()
                 continue
