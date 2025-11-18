@@ -49,6 +49,11 @@ def run():
                     command_args.get(const.KEY_WORD_CURRENCY),
                     float(command_args.get(const.KEY_WORD_AMOUNT) or 0),
                 )
+            case const.CMD_GET_RATE:
+                usecases.get_rate_action(
+                    command_args.get(const.KEY_WORD_FROM),
+                    command_args.get(const.KEY_WORD_TO),
+                )
             case const.CMD_EXIT:
                 is_active = usecases.exit()
                 continue

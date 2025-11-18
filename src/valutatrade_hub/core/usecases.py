@@ -245,3 +245,24 @@ def sell(user: models.User, currency: str, amount: float):
         f"- {currency}: было {cur_wallet_data.get('balance')} → стало {cur_wallet.balance}"  # noqa E501
     )
     print(f"Оценочная выручка: {usd_amount} USD")
+
+
+@error_handler
+def get_rate_action(from_currency: str | None, to_currency: str | None):
+    if (from_currency not in const.CURRENCY) or (to_currency not in const.CURRENCY):
+        raise ValueError(
+            f"Невозможно конвертировать валюту {from_currency} в {to_currency}"
+        )
+
+    rates = storage.load(const.RATES_FILE) or {}
+    rate_key = f"{from_currency}_{to_currency}"
+    rate_data = rates.get(rate_key) or {}
+    is_old = utils.is_old_update(rate_data.get("updated_at"))
+
+    if not rate_data or is_old:
+        raise RuntimeError("Нет данных и недоступен Parser")
+
+    print(
+        f"Курс {rate_key}: {rate_data.get('rate')} (обновлено: {rate_data.get("updated_at")})"  # noqa E501
+    )
+    print("Обратный курс BTC→USD: 59337.21")  # TODO:

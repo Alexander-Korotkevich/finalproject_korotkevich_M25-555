@@ -11,6 +11,7 @@ CMD_LOGIN = "login"
 CMD_SHOW_PORTFOLIO = "show-portfolio"
 CMD_BUY = "buy"
 CMD_SELL = "sell"
+CMD_GET_RATE = "get-rate"
 
 
 MIN_PASSWORD_LENGTH = 4
@@ -21,6 +22,8 @@ KEY_WORD_PASSWORD = "password"
 KEY_WORD_BASE = "base"
 KEY_WORD_CURRENCY = "currency"
 KEY_WORD_AMOUNT = "amount"
+KEY_WORD_FROM = "from"
+KEY_WORD_TO = "to"
 
 BASE_CURRENCY = "USD"
 
@@ -31,3 +34,5 @@ CURRENCY = (
     "BTC",
     "ETH",
 )
+
+UPDATE_TIME = 5 # minutes

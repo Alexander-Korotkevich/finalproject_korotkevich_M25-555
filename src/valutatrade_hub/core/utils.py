@@ -1,7 +1,7 @@
 import hashlib
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from src.valutatrade_hub import const
@@ -12,7 +12,11 @@ def validate_positive_number(value: float, entity_name: str, no_zero: bool = Fal
     """Валидация положительного числа"""
     import math
 
-    if (not isinstance(value, float)) or math.isnan(value) or (value <= 0 if no_zero else value < 0):
+    if (
+        (not isinstance(value, float))
+        or math.isnan(value)
+        or (value <= 0 if no_zero else value < 0)
+    ):
         raise ValueError(f"Значение {entity_name} должно быть положительным числом")
 
     return value
@@ -153,3 +157,14 @@ def convert_currency(amount: float, from_currency: str, to_currency: str, rates)
     amount *= rate
 
     return amount
+
+
+def is_old_update(updated_at: Any):
+    """Проверяет, является ли обновление устаревшим"""
+
+    if not updated_at or not isinstance(updated_at, str):
+        return True
+
+    return datetime.now() - datetime.fromisoformat(updated_at) > timedelta(
+        minutes=const.UPDATE_TIME
+    )
