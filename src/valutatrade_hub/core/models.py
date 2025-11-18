@@ -3,6 +3,7 @@ from typing import Any
 
 from src.valutatrade_hub.core import utils
 from src.valutatrade_hub.core.decorators import error_handler
+from src.valutatrade_hub.core.exceptions import InsufficientFundsError
 from src.valutatrade_hub.core.utils import hashed_password, validate_positive_number
 
 
@@ -112,16 +113,16 @@ class Wallet:
     def balance(self, balance: float):
         self._balance = validate_positive_number(balance, "баланса")
 
-    @error_handler
     def deposit(self, amount: float):
         """Пополняет кошелек"""
         self._balance += validate_positive_number(amount, "суммы")
 
-    @error_handler
     def withdraw(self, amount: float):
         """Снимает деньги со счета"""
         if self._balance < amount:
-            raise ValueError("Недостаточно средств на кошельке")
+            raise InsufficientFundsError(
+                f"доступно {self._balance} {self._currency_code}, требуется {amount} {self._currency_code}"  # noqa E501
+            )
         self._balance -= validate_positive_number(amount, "суммы")
 
     def get_balance_info(self):
@@ -183,9 +184,9 @@ class Portfolio:
             )
 
             if wallet_value is None:
-               total_value = None
-               break
-            
+                total_value = None
+                break
+
             total_value += wallet_value
 
         return total_value

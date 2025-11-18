@@ -4,6 +4,7 @@ import src.valutatrade_hub.const as const
 import src.valutatrade_hub.core.utils as utils
 from src.valutatrade_hub.core import models
 from src.valutatrade_hub.core.decorators import check_auth, error_handler
+from src.valutatrade_hub.core.exceptions import InsufficientFundsError
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.dirname(current_dir)
@@ -212,8 +213,8 @@ def sell(user: models.User, currency: str, amount: float):
     usd_wallet_data = user_portfolio.get_wallet(const.BASE_CURRENCY)
 
     if cur_wallet_data.get("balance") < amount:
-        raise ValueError(
-            f"Недостаточно средств: доступно {cur_wallet_data.get("balance")} {currency}, требуется {amount} {currency}"  # noqa E501
+        raise InsufficientFundsError(
+            f"доступно {cur_wallet_data.get("balance")} {currency}, требуется {amount} {currency}"  # noqa E501
         )
 
     cur_wallet = models.Wallet(currency, cur_wallet_data.get("balance"))
