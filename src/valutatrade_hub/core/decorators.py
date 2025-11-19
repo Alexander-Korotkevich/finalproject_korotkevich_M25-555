@@ -13,11 +13,15 @@ def error_handler(func):
         try:
             return func(*args, **kwargs)
         except RuntimeError as e:
-            print(f"Системная ошибка: {e}")    
+            print(f"Системная ошибка: {e}")
         except NotAuthorizedError:
             print("Сначала выполните login")
         except InsufficientFundsError as e:
-            print(f"Недостаточно средств: {e}")  
+            print(f"Недостаточно средств: {e}")
+        except FileNotFoundError as e:
+            print(f"Файл не найден: {e}")
+        except KeyError as e:
+            print(f"Ключ не найден: {e}")
         except ValueError as e:
             print(f"Ошибка валидации: {e}")
         except Exception as e:
@@ -30,6 +34,7 @@ T = TypeVar("T")
 
 
 def check_auth(func: Callable[..., T]) -> Callable[..., T]:
+    @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> T:
         if not args or args[0] is None:
             raise NotAuthorizedError("Authentication required")

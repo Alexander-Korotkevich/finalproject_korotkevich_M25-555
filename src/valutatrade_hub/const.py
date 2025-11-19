@@ -1,10 +1,3 @@
-DATA_DIR = "data"
-ROOT_DIR = "src"
-
-USERS_FILE = "users.json"
-PORTFOLIOS_FILE = "portfolios.json"
-RATES_FILE = "rates.json"
-
 CMD_EXIT = "exit"
 CMD_REGISTER = "register"
 CMD_LOGIN = "login"
@@ -25,8 +18,6 @@ KEY_WORD_AMOUNT = "amount"
 KEY_WORD_FROM = "from"
 KEY_WORD_TO = "to"
 
-BASE_CURRENCY = "USD"
-
 CURRENCY = (
     "USD",
     "EUR",
@@ -34,5 +25,3 @@ CURRENCY = (
     "BTC",
     "ETH",
 )
-
-UPDATE_TIME = 5 # minutes

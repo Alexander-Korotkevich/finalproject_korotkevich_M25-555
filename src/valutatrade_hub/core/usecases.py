@@ -1,16 +1,10 @@
-import os
-
 import src.valutatrade_hub.const as const
 import src.valutatrade_hub.core.utils as utils
 from src.valutatrade_hub.core import models
 from src.valutatrade_hub.core.decorators import check_auth, error_handler
 from src.valutatrade_hub.core.exceptions import InsufficientFundsError
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-root_path = os.path.dirname(current_dir)
-storage_path = os.path.join(root_path, const.DATA_DIR)
-storage = utils.FileStorage(storage_path)
-
+from src.valutatrade_hub.infra.database import DatabaseManager
+from src.valutatrade_hub.infra.settings import app_config
 
 def exit():
     """Выход из программы"""
@@ -19,7 +13,7 @@ def exit():
 
 
 @error_handler
-def register(username: str | None, password: str | None):
+def register(username: str | None, password: str | None, db: DatabaseManager):
     """Регистрация нового пользователя"""
 
     if (not username or not password) or not username.strip() or not password.strip():
@@ -30,7 +24,7 @@ def register(username: str | None, password: str | None):
             f"Пароль должен содержать не менее {const.MIN_PASSWORD_LENGTH} символов"
         )
 
-    users = storage.load(const.USERS_FILE) or []
+    users = db.load(app_config.get("USERS_FILE")) or []
 
     if users and any(user["username"] == username for user in users):
         raise ValueError(f"Имя пользователя '{username}' уже занято")
@@ -41,13 +35,13 @@ def register(username: str | None, password: str | None):
     hashed_password = utils.hashed_password(password, salt)
     user = utils.create_user(id, username, hashed_password, salt)
     users.append(user)
-    result = storage.save(const.USERS_FILE, users)
+    result = db.save(app_config.get("USERS_FILE"), users)
 
     # Создаем портфель
-    portfolios = storage.load(const.PORTFOLIOS_FILE) or []
-    portfolio = utils.create_portfolio(id)
+    portfolios = db.load(app_config.get("PORTFOLIOS_FILE")) or []
+    portfolio = utils.create_portfolio(id, app_config.get("BASE_CURRENCY"))
     portfolios.append(portfolio)
-    storage.save(const.PORTFOLIOS_FILE, portfolios)
+    db.save(app_config.get("PORTFOLIOS_FILE"), portfolios)
 
     if result:
         print(
@@ -59,13 +53,13 @@ def register(username: str | None, password: str | None):
 
 
 @error_handler
-def login(username: str | None, password: str | None):
+def login(username: str | None, password: str | None, db: DatabaseManager):
     """Вход в систему"""
 
     if (not username or not password) or not username.strip() or not password.strip():
         raise ValueError("Пожалуйста, введите имя пользователя и пароль")
 
-    users = storage.load(const.USERS_FILE) or []
+    users = db.load(app_config.get("USERS_FILE")) or []
 
     current_user = None
 
@@ -95,10 +89,10 @@ def login(username: str | None, password: str | None):
 
 @error_handler
 @check_auth
-def show_portfolio(user: models.User, base_currency=const.BASE_CURRENCY):
+def show_portfolio(user: models.User, db, base_currency=app_config.get("BASE_CURRENCY")):
     """Показать портфель"""
 
-    portfolios = storage.load(const.PORTFOLIOS_FILE) or []
+    portfolios = db.load(app_config.get("PORTFOLIOS_FILE")  ) or []
     user_portfolio = utils.get_user_portfolio(
         portfolios, user.user_id, models.Portfolio
     )
@@ -109,7 +103,7 @@ def show_portfolio(user: models.User, base_currency=const.BASE_CURRENCY):
     if base_currency not in const.CURRENCY:
         raise ValueError(f"Неизвестная базовая валюта '{base_currency}'")
 
-    rates = storage.load(const.RATES_FILE) or {}
+    rates = db.load(app_config.get("RATES_FILE")) or {}
 
     print(f"Портфель пользователя '{user.username}' (база: {base_currency}):")
 
@@ -132,7 +126,7 @@ def show_portfolio(user: models.User, base_currency=const.BASE_CURRENCY):
 
 @error_handler
 @check_auth
-def buy(user: models.User, currency: str, amount: float):
+def buy(user: models.User, currency: str, amount: float, db):
     """Купить валюту"""
 
     if currency not in const.CURRENCY:
@@ -140,7 +134,7 @@ def buy(user: models.User, currency: str, amount: float):
 
     utils.validate_positive_number(amount, "количества валюты", no_zero=True)
 
-    portfolios = storage.load(const.PORTFOLIOS_FILE) or []
+    portfolios = db.load(app_config.get("PORTFOLIOS_FILE")) or []
     user_portfolio = utils.get_user_portfolio(
         portfolios, user.user_id, models.Portfolio
     )
@@ -149,10 +143,10 @@ def buy(user: models.User, currency: str, amount: float):
         user_portfolio.add_currency(currency)
 
     cur_wallet_data = user_portfolio.get_wallet(currency)
-    usd_wallet_data = user_portfolio.get_wallet(const.BASE_CURRENCY)
+    usd_wallet_data = user_portfolio.get_wallet(app_config.get("BASE_CURRENCY"))
 
-    rates = storage.load(const.RATES_FILE) or {}
-    usd_amount = utils.convert_currency(amount, currency, const.BASE_CURRENCY, rates)
+    rates = db.load(app_config.get("RATES_FILE")) or {}
+    usd_amount = utils.convert_currency(amount, currency, app_config.get("BASE_CURRENCY"), rates)
 
     if usd_amount is None:
         raise ValueError(f"Невозможно приобрести {amount} {currency}")
@@ -160,26 +154,26 @@ def buy(user: models.User, currency: str, amount: float):
     if usd_wallet_data.get("balance") < usd_amount:
         raise ValueError(f"Недостаточно средств для приобретения {amount} {currency}")
 
-    usd_wallet = models.Wallet(const.BASE_CURRENCY, usd_wallet_data.get("balance"))
+    usd_wallet = models.Wallet(app_config.get("BASE_CURRENCY"), usd_wallet_data.get("balance"))
     usd_wallet.withdraw(usd_amount)
 
     cur_wallet = models.Wallet(currency, cur_wallet_data.get("balance"))
     cur_wallet.deposit(amount)
 
-    rate = utils.get_rate(currency, const.BASE_CURRENCY, rates)
+    rate = utils.get_rate(currency, app_config.get("BASE_CURRENCY"), rates)
 
     for _portfolio in portfolios:
         if _portfolio.get("user_id") == user.user_id:
             _portfolio.get("wallets")[currency] = {"balance": cur_wallet.balance}
-            _portfolio.get("wallets")[const.BASE_CURRENCY] = {
+            _portfolio.get("wallets")[app_config.get("BASE_CURRENCY")] = {
                 "balance": usd_wallet.balance
             }
             break
 
-    storage.save(const.PORTFOLIOS_FILE, portfolios)
+    db.save(app_config.get("PORTFOLIOS_FILE"), portfolios)
 
     print(
-        f"Покупка выполнена: {amount} {currency} по курсу {rate} {const.BASE_CURRENCY}/{currency}"  # noqa E501
+        f"Покупка выполнена: {amount} {currency} по курсу {rate} {app_config.get("BASE_CURRENCY")}/{currency}"  # noqa E501
     )
     print("Изменения в портфеле:")
     print(
@@ -190,7 +184,7 @@ def buy(user: models.User, currency: str, amount: float):
 
 @error_handler
 @check_auth
-def sell(user: models.User, currency: str, amount: float):
+def sell(user: models.User, currency: str, amount: float, db: DatabaseManager):
     """Продать валюту"""
 
     if currency not in const.CURRENCY:
@@ -198,7 +192,7 @@ def sell(user: models.User, currency: str, amount: float):
 
     utils.validate_positive_number(amount, "количества валюты", no_zero=True)
 
-    portfolios = storage.load(const.PORTFOLIOS_FILE) or []
+    portfolios = db.load(app_config.get("PORTFOLIOS_FILE")) or []
     user_portfolio = utils.get_user_portfolio(
         portfolios, user.user_id, models.Portfolio
     )
@@ -210,7 +204,7 @@ def sell(user: models.User, currency: str, amount: float):
             f"У вас нет кошелька '{currency}'. Добавьте валюту: она создаётся автоматически при первой покупке."  # noqa E501
         )
 
-    usd_wallet_data = user_portfolio.get_wallet(const.BASE_CURRENCY)
+    usd_wallet_data = user_portfolio.get_wallet(app_config.get("BASE_CURRENCY"))
 
     if cur_wallet_data.get("balance") < amount:
         raise InsufficientFundsError(
@@ -220,26 +214,26 @@ def sell(user: models.User, currency: str, amount: float):
     cur_wallet = models.Wallet(currency, cur_wallet_data.get("balance"))
     cur_wallet.withdraw(amount)
 
-    rates = storage.load(const.RATES_FILE) or {}
-    rate = utils.get_rate(currency, const.BASE_CURRENCY, rates)
+    rates = db.load(app_config.get("RATES_FILE")) or {}
+    rate = utils.get_rate(currency, app_config.get("BASE_CURRENCY"), rates)
 
-    usd_amount = utils.convert_currency(amount, currency, const.BASE_CURRENCY, rates)
+    usd_amount = utils.convert_currency(amount, currency, app_config.get("BASE_CURRENCY"), rates)
 
-    usd_wallet = models.Wallet(const.BASE_CURRENCY, usd_wallet_data.get("balance"))
+    usd_wallet = models.Wallet(app_config.get("BASE_CURRENCY"), usd_wallet_data.get("balance"))
     usd_wallet.withdraw(usd_amount)
 
     for _portfolio in portfolios:
         if _portfolio.get("user_id") == user.user_id:
             _portfolio.get("wallets")[currency] = {"balance": cur_wallet.balance}
-            _portfolio.get("wallets")[const.BASE_CURRENCY] = {
+            _portfolio.get("wallets")[app_config.get("BASE_CURRENCY")] = {
                 "balance": usd_wallet.balance
             }
             break
 
-    storage.save(const.PORTFOLIOS_FILE, portfolios)
+    db.save(app_config.get("PORTFOLIOS_FILE"), portfolios)
 
     print(
-        f"Продажа выполнена: {amount} {currency} по курсу {rate} {const.BASE_CURRENCY}/{currency}"  # noqa E501
+        f"Продажа выполнена: {amount} {currency} по курсу {rate} {app_config.get("BASE_CURRENCY")}/{currency}"  # noqa E501
     )
     print("Изменения в портфеле:")
     print(
@@ -249,16 +243,16 @@ def sell(user: models.User, currency: str, amount: float):
 
 
 @error_handler
-def get_rate_action(from_currency: str | None, to_currency: str | None):
+def get_rate_action(from_currency: str | None, to_currency: str | None, db: DatabaseManager):
     if (from_currency not in const.CURRENCY) or (to_currency not in const.CURRENCY):
         raise ValueError(
             f"Невозможно конвертировать валюту {from_currency} в {to_currency}"
         )
 
-    rates = storage.load(const.RATES_FILE) or {}
+    rates = db.load(app_config.get("RATES_FILE")) or {}
     rate_key = f"{from_currency}_{to_currency}"
     rate_data = rates.get(rate_key) or {}
-    is_old = utils.is_old_update(rate_data.get("updated_at"))
+    is_old = utils.is_old_update(rate_data.get("updated_at"), app_config.get("RATES_TTL_SECONDS"))
 
     if not rate_data or is_old:
         raise RuntimeError("Нет данных и недоступен Parser")

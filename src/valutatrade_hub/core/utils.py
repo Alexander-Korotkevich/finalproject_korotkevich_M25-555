@@ -22,40 +22,6 @@ def validate_positive_number(value: float, entity_name: str, no_zero: bool = Fal
     return value
 
 
-class FileStorage:
-    def __init__(self, dir: str):
-        """
-        Инициализация хранилища данных
-
-        Args:
-            dir: директория, в которой будут сохраняться данные
-        """
-        self._dir = dir
-
-    def save(self, filename: str, data: Any):
-        """Сохранение данных в файл"""
-
-        file_path = os.path.join(self._dir, filename)
-
-        # Создаем директорию, если она не существует
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-        with open(file_path, "w", encoding="utf-8") as file:
-            json.dump(data, file, ensure_ascii=False)
-
-        return True
-
-    def load(self, filename: str):
-        """Загрузка данных из файла"""
-
-        try:
-            with open(os.path.join(self._dir, filename), "r", encoding="utf-8") as file:
-                return json.load(file)
-        except FileNotFoundError:
-            print("test")
-            return None
-
-
 def welcome():
     """Вывод приветствия"""
     print("*" * 35)
@@ -107,12 +73,12 @@ def create_user(user_id: int, username: str, hashed_password: str, salt: str):
     }
 
 
-def create_portfolio(user_id: int):
+def create_portfolio(user_id: int, base_currency: str):
     """Создание портфеля"""
     return {
         "user_id": user_id,
         "wallets": {
-            const.BASE_CURRENCY: {"balance": 0.0},
+            base_currency: {"balance": 0.0},
         },
     }
 
@@ -159,12 +125,28 @@ def convert_currency(amount: float, from_currency: str, to_currency: str, rates)
     return amount
 
 
-def is_old_update(updated_at: Any):
+def is_old_update(updated_at: Any, update_time: int):
     """Проверяет, является ли обновление устаревшим"""
 
     if not updated_at or not isinstance(updated_at, str):
         return True
 
     return datetime.now() - datetime.fromisoformat(updated_at) > timedelta(
-        minutes=const.UPDATE_TIME
+        seconds=update_time
     )
+
+
+class SingletonMeta(type):
+    """Метакласс для создания Singleton-объектов"""
+
+    """
+    Выбрал этот способ, так как он может быть переиспользован
+    в отличие от __new__
+    """
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
