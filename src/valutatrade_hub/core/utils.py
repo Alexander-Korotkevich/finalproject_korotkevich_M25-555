@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from src.valutatrade_hub import const
-from src.valutatrade_hub.core.decorators import error_handler
+from src.valutatrade_hub.decorators import error_handler
 
 
 def validate_positive_number(value: float, entity_name: str, no_zero: bool = False):

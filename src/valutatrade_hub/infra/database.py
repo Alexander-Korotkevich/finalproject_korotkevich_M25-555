@@ -12,7 +12,6 @@ class DatabaseManager:
             dir: директория, в которой будут сохраняться данные
         """
         self._dir = dir
-        print(dir)
 
     def save(self, filename: str, data: Any):
         """Сохранение данных в файл"""

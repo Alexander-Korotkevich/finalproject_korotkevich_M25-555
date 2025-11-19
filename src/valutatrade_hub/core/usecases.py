@@ -1,7 +1,7 @@
 import src.valutatrade_hub.const as const
 import src.valutatrade_hub.core.utils as utils
 from src.valutatrade_hub.core import models
-from src.valutatrade_hub.core.decorators import check_auth, error_handler
+from src.valutatrade_hub.decorators import check_auth, error_handler, log_domain_action
 from src.valutatrade_hub.core.exceptions import InsufficientFundsError
 from src.valutatrade_hub.infra.database import DatabaseManager
 from src.valutatrade_hub.infra.settings import app_config
@@ -13,6 +13,7 @@ def exit():
 
 
 @error_handler
+@log_domain_action("REGISTER", verbose=True)
 def register(username: str | None, password: str | None, db: DatabaseManager):
     """Регистрация нового пользователя"""
 
@@ -53,6 +54,7 @@ def register(username: str | None, password: str | None, db: DatabaseManager):
 
 
 @error_handler
+@log_domain_action("LOGIN", verbose=True)
 def login(username: str | None, password: str | None, db: DatabaseManager):
     """Вход в систему"""
 
@@ -125,6 +127,7 @@ def show_portfolio(user: models.User, db, base_currency=app_config.get("BASE_CUR
 
 
 @error_handler
+@log_domain_action("BUY", verbose=True)
 @check_auth
 def buy(user: models.User, currency: str, amount: float, db):
     """Купить валюту"""
@@ -152,7 +155,7 @@ def buy(user: models.User, currency: str, amount: float, db):
         raise ValueError(f"Невозможно приобрести {amount} {currency}")
 
     if usd_wallet_data.get("balance") < usd_amount:
-        raise ValueError(f"Недостаточно средств для приобретения {amount} {currency}")
+        raise InsufficientFundsError(f"для приобретения {amount} {currency}")
 
     usd_wallet = models.Wallet(app_config.get("BASE_CURRENCY"), usd_wallet_data.get("balance"))
     usd_wallet.withdraw(usd_amount)
@@ -183,6 +186,7 @@ def buy(user: models.User, currency: str, amount: float, db):
 
 
 @error_handler
+@log_domain_action("SELL", verbose=True)
 @check_auth
 def sell(user: models.User, currency: str, amount: float, db: DatabaseManager):
     """Продать валюту"""
