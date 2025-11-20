@@ -1,10 +1,11 @@
 import src.valutatrade_hub.const as const
 import src.valutatrade_hub.core.utils as utils
-from src.valutatrade_hub.core import models
+from src.valutatrade_hub.core import currencies, models
 from src.valutatrade_hub.decorators import check_auth, error_handler, log_domain_action
 from src.valutatrade_hub.core.exceptions import InsufficientFundsError
 from src.valutatrade_hub.infra.database import DatabaseManager
 from src.valutatrade_hub.infra.settings import app_config
+
 
 def exit():
     """Выход из программы"""
@@ -91,10 +92,12 @@ def login(username: str | None, password: str | None, db: DatabaseManager):
 
 @error_handler
 @check_auth
-def show_portfolio(user: models.User, db, base_currency=app_config.get("BASE_CURRENCY")):
+def show_portfolio(
+    user: models.User, db, base_currency=app_config.get("BASE_CURRENCY")
+):
     """Показать портфель"""
 
-    portfolios = db.load(app_config.get("PORTFOLIOS_FILE")  ) or []
+    portfolios = db.load(app_config.get("PORTFOLIOS_FILE")) or []
     user_portfolio = utils.get_user_portfolio(
         portfolios, user.user_id, models.Portfolio
     )
@@ -132,8 +135,7 @@ def show_portfolio(user: models.User, db, base_currency=app_config.get("BASE_CUR
 def buy(user: models.User, currency: str, amount: float, db):
     """Купить валюту"""
 
-    if currency not in const.CURRENCY:
-        raise ValueError(f"Неизвестная валюта '{currency}'")
+    currencies.get_currency(currency)
 
     utils.validate_positive_number(amount, "количества валюты", no_zero=True)
 
@@ -149,7 +151,9 @@ def buy(user: models.User, currency: str, amount: float, db):
     usd_wallet_data = user_portfolio.get_wallet(app_config.get("BASE_CURRENCY"))
 
     rates = db.load(app_config.get("RATES_FILE")) or {}
-    usd_amount = utils.convert_currency(amount, currency, app_config.get("BASE_CURRENCY"), rates)
+    usd_amount = utils.convert_currency(
+        amount, currency, app_config.get("BASE_CURRENCY"), rates
+    )
 
     if usd_amount is None:
         raise ValueError(f"Невозможно приобрести {amount} {currency}")
@@ -157,7 +161,9 @@ def buy(user: models.User, currency: str, amount: float, db):
     if usd_wallet_data.get("balance") < usd_amount:
         raise InsufficientFundsError(f"для приобретения {amount} {currency}")
 
-    usd_wallet = models.Wallet(app_config.get("BASE_CURRENCY"), usd_wallet_data.get("balance"))
+    usd_wallet = models.Wallet(
+        app_config.get("BASE_CURRENCY"), usd_wallet_data.get("balance")
+    )
     usd_wallet.withdraw(usd_amount)
 
     cur_wallet = models.Wallet(currency, cur_wallet_data.get("balance"))
@@ -191,8 +197,7 @@ def buy(user: models.User, currency: str, amount: float, db):
 def sell(user: models.User, currency: str, amount: float, db: DatabaseManager):
     """Продать валюту"""
 
-    if currency not in const.CURRENCY:
-        raise ValueError(f"Неизвестная валюта '{currency}'")
+    currencies.get_currency(currency)
 
     utils.validate_positive_number(amount, "количества валюты", no_zero=True)
 
@@ -221,9 +226,13 @@ def sell(user: models.User, currency: str, amount: float, db: DatabaseManager):
     rates = db.load(app_config.get("RATES_FILE")) or {}
     rate = utils.get_rate(currency, app_config.get("BASE_CURRENCY"), rates)
 
-    usd_amount = utils.convert_currency(amount, currency, app_config.get("BASE_CURRENCY"), rates)
+    usd_amount = utils.convert_currency(
+        amount, currency, app_config.get("BASE_CURRENCY"), rates
+    )
 
-    usd_wallet = models.Wallet(app_config.get("BASE_CURRENCY"), usd_wallet_data.get("balance"))
+    usd_wallet = models.Wallet(
+        app_config.get("BASE_CURRENCY"), usd_wallet_data.get("balance")
+    )
     usd_wallet.withdraw(usd_amount)
 
     for _portfolio in portfolios:
@@ -247,7 +256,9 @@ def sell(user: models.User, currency: str, amount: float, db: DatabaseManager):
 
 
 @error_handler
-def get_rate_action(from_currency: str | None, to_currency: str | None, db: DatabaseManager):
+def get_rate_action(
+    from_currency: str | None, to_currency: str | None, db: DatabaseManager
+):
     if (from_currency not in const.CURRENCY) or (to_currency not in const.CURRENCY):
         raise ValueError(
             f"Невозможно конвертировать валюту {from_currency} в {to_currency}"
@@ -256,7 +267,9 @@ def get_rate_action(from_currency: str | None, to_currency: str | None, db: Data
     rates = db.load(app_config.get("RATES_FILE")) or {}
     rate_key = f"{from_currency}_{to_currency}"
     rate_data = rates.get(rate_key) or {}
-    is_old = utils.is_old_update(rate_data.get("updated_at"), app_config.get("RATES_TTL_SECONDS"))
+    is_old = utils.is_old_update(
+        rate_data.get("updated_at"), app_config.get("RATES_TTL_SECONDS")
+    )
 
     if not rate_data or is_old:
         raise RuntimeError("Нет данных и недоступен Parser")

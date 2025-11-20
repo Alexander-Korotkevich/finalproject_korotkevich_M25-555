@@ -4,6 +4,7 @@ from typing import Any, Callable, TypeVar
 
 from src.valutatrade_hub.core import utils
 from src.valutatrade_hub.core.exceptions import (
+    CurrencyNotFoundError,
     InsufficientFundsError,
     NotAuthorizedError,
 )
@@ -20,6 +21,8 @@ def error_handler(func):
             print("Сначала выполните login")
         except InsufficientFundsError as e:
             print(f"Недостаточно средств: {e}")
+        except CurrencyNotFoundError as e:
+            print(e)
         except FileNotFoundError as e:
             print(f"Файл не найден: {e}")
         except KeyError as e:
@@ -85,7 +88,7 @@ class log_action:
                 result = "ERROR"
                 error_type = type(e).__name__
                 error_message = str(e)
-                raise  # Пробрасываем исключение дальше
+                raise e
 
             finally:
                 # Формируем дополнительные поля
@@ -129,8 +132,12 @@ class log_action:
 
                 # Извлекаем портфель
                 rates = db.load(app_config.get("RATES_FILE")) or []
-                rate = utils.get_rate(args[1], app_config.get("BASE_CURRENCY"), rates)
-
+                try:
+                    rate = utils.get_rate(
+                        args[1], app_config.get("BASE_CURRENCY"), rates
+                    )
+                except ValueError:
+                    rate = 0
                 context["username"] = args[0].username if args[0] else "unknown"
                 context["currency_code"] = args[1]
                 context["amount"] = args[2]
