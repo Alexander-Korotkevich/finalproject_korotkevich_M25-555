@@ -208,3 +208,7 @@ __marimo__/
 
 data/
 logs/
+exchange_rates.json
+portfolios.json
+rates.json
+users.json

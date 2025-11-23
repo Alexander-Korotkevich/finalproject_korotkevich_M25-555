@@ -4,5 +4,6 @@
   "DATA_FILE": "src/valutatrade_hub/data",
   "PORTFOLIOS_FILE": "portfolios.json",
   "RATES_FILE": "rates.json",
+  "HISTORY_FILE": "exchange_rates.json",
   "USERS_FILE": "users.json"
 }

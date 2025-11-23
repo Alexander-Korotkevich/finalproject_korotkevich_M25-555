@@ -1,3 +1,5 @@
+import logging
+from pathlib import Path
 import src.valutatrade_hub.const as const
 import src.valutatrade_hub.core.utils as utils
 from src.valutatrade_hub.core import currencies, models
@@ -5,7 +7,11 @@ from src.valutatrade_hub.decorators import check_auth, error_handler, log_domain
 from src.valutatrade_hub.core.exceptions import InsufficientFundsError
 from src.valutatrade_hub.infra.database import DatabaseManager
 from src.valutatrade_hub.infra.settings import app_config
-
+from src.valutatrade_hub.parser_service import updater
+from src.valutatrade_hub.parser_service.api_client import (
+    CoinGeckoClient,
+    ExchangeRateApiClient,
+)
 
 def exit():
     """Выход из программы"""
@@ -278,3 +284,16 @@ def get_rate_action(
         f"Курс {rate_key}: {rate_data.get('rate')} (обновлено: {rate_data.get("updated_at")})"  # noqa E501
     )
     print("Обратный курс BTC→USD: 59337.21")  # TODO:
+
+
+@error_handler
+def update_rates(source: str | None):
+    coin_gecko = CoinGeckoClient()
+
+    result1 = coin_gecko.fetch_rates()
+    print('result1', result1)
+
+    exchange_rate = ExchangeRateApiClient()
+
+    result2 = exchange_rate.fetch_rates()
+    print('result2',result2)

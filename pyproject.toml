@@ -11,6 +11,8 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.12"
 prompt = "^0.4.1"
+requests = "^2.32.5"
+dotenv = "^0.9.9"
 
 [tool.poetry.scripts]
 project = "src.main:main"

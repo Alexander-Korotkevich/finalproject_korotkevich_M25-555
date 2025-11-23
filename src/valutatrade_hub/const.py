@@ -5,6 +5,7 @@ CMD_SHOW_PORTFOLIO = "show-portfolio"
 CMD_BUY = "buy"
 CMD_SELL = "sell"
 CMD_GET_RATE = "get-rate"
+CMD_UPDATE_RATES = "update-rates"
 
 
 MIN_PASSWORD_LENGTH = 4
@@ -17,6 +18,7 @@ KEY_WORD_CURRENCY = "currency"
 KEY_WORD_AMOUNT = "amount"
 KEY_WORD_FROM = "from"
 KEY_WORD_TO = "to"
+KEY_WORD_SOURCE = 'source'
 
 CURRENCY = (
     "USD",
