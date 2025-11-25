@@ -20,7 +20,7 @@ def exit():
 
 
 @error_handler
-@log_domain_action(const.LOG_ACTION_REGISTER, verbose=True)
+@log_domain_action(const.LOG_ACTION_REGISTER)
 def register(username: str | None, password: str | None, db: DatabaseManager):
     """Регистрация нового пользователя"""
 
@@ -61,7 +61,7 @@ def register(username: str | None, password: str | None, db: DatabaseManager):
 
 
 @error_handler
-@log_domain_action(const.LOG_ACTION_LOGIN, verbose=True)
+@log_domain_action(const.LOG_ACTION_LOGIN)
 def login(username: str | None, password: str | None, db: DatabaseManager):
     """Вход в систему"""
 
@@ -137,7 +137,7 @@ def show_portfolio(
 
 
 @error_handler
-@log_domain_action(const.LOG_ACTION_BUY, verbose=True)
+@log_domain_action(const.LOG_ACTION_BUY)
 @check_auth
 def buy(user: models.User, currency: str, amount: float, db):
     """Купить валюту"""
@@ -200,7 +200,7 @@ def buy(user: models.User, currency: str, amount: float, db):
 
 
 @error_handler
-@log_domain_action(const.LOG_ACTION_SELL, verbose=True)
+@log_domain_action(const.LOG_ACTION_SELL)
 @check_auth
 def sell(user: models.User, currency: str, amount: float, db: DatabaseManager):
     """Продать валюту"""

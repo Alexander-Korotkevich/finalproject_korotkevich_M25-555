@@ -78,7 +78,7 @@ class log_action:
                 return_value = func(*args, **kwargs)
 
                 # Добавляем verbose информацию если нужно
-                if self.verbose:
+                if self.verbose and self.action in [const.LOG_ACTION_SELL, const.LOG_ACTION_BUY]:
                     context_info = self._get_verbose_context(return_value, args, kwargs)
 
                 return return_value
@@ -148,14 +148,7 @@ class log_action:
 
     def _get_verbose_context(self, return_value: Any, args: tuple, kwargs: dict) -> str:
         """Генерирует verbose контекст"""
-        try:
-            pass
-
-        except Exception:
-            # Игнорируем ошибки в verbose контексте
-            pass
-
-        return ""
+        return "Было ... и стало ..."
 
 
 # Фабрика декораторов
