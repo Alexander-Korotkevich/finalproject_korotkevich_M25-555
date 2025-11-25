@@ -69,7 +69,7 @@ def run():
                     db,
                 )
             case const.CMD_UPDATE_RATES:
-                usecases.update_rates(command_args.get(const.KEY_WORD_SOURCE), db=db)    
+                usecases.update_rates(command_args.get(const.KEY_WORD_SOURCE), db=db)   
             case const.CMD_SHOW_RATES:
                 usecases.show_rates(command_args.get(const.KEY_WORD_CURRENCY), 
                                     int(command_args.get(const.KEY_WORD_TOP) or 0), 

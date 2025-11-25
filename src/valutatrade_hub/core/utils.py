@@ -1,10 +1,8 @@
 import hashlib
-import json
 import os
 from datetime import datetime, timedelta
 from typing import Any
 
-from src.valutatrade_hub import const
 from src.valutatrade_hub.decorators import error_handler
 
 

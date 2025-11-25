@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-import requests
 from typing import Dict
+
+import requests
 
 from src.valutatrade_hub.core.exceptions import (
     ApiKeyError,
@@ -8,8 +9,8 @@ from src.valutatrade_hub.core.exceptions import (
     NetworkError,
     RateLimitError,
 )
-from src.valutatrade_hub.parser_service.config import parser_config
 from src.valutatrade_hub.infra.settings import app_config
+from src.valutatrade_hub.parser_service.config import parser_config
 
 
 class BaseApiClient(ABC):

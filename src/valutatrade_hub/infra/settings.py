@@ -1,7 +1,8 @@
 import json
 import os
-from src.valutatrade_hub.core.utils import SingletonMeta
 import sys
+
+from src.valutatrade_hub.core.utils import SingletonMeta
 
 
 class SettingsLoader(metaclass=SingletonMeta):
@@ -19,7 +20,7 @@ class SettingsLoader(metaclass=SingletonMeta):
             with open(os.path.abspath(self._config_path), "r") as f:
                 return json.load(f)
         except FileNotFoundError:
-            print(f"Конфигурационный файл не найден")
+            print("Конфигурационный файл не найден")
             sys.exit()
 
     def get(self, key: str):

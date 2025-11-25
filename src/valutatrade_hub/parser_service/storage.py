@@ -1,5 +1,7 @@
 from datetime import datetime
+
 from src.valutatrade_hub.parser_service.config import parser_config
+
 
 class Storage():
   """Класс для сохранения курсов валют в базу данных"""

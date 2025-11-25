@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass, field
-import sys
 from typing import Dict
+
 from dotenv import load_dotenv
 
 load_dotenv()  # ← это обязательно!

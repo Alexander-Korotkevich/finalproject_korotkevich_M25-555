@@ -19,7 +19,7 @@ class InsufficientFundsError(Exception):
 class ApiRequestError(Exception):
     """Базовое исключение для ошибок API запросов"""
 
-    def __init__(self, message: str, status_code: int | None = None, url: str | None = None):
+    def __init__(self, message: str, status_code: int | None = None, url: str | None = None): # noqa E501
         self.message = message
         self.status_code = status_code
         self.url = url

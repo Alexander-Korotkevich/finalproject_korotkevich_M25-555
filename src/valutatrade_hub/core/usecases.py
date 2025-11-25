@@ -1,10 +1,8 @@
-import logging
-from pathlib import Path
 import src.valutatrade_hub.const as const
 import src.valutatrade_hub.core.utils as utils
 from src.valutatrade_hub.core import currencies, models
-from src.valutatrade_hub.decorators import check_auth, error_handler, log_domain_action
 from src.valutatrade_hub.core.exceptions import InsufficientFundsError
+from src.valutatrade_hub.decorators import check_auth, error_handler, log_domain_action
 from src.valutatrade_hub.infra.database import DatabaseManager
 from src.valutatrade_hub.infra.settings import app_config
 from src.valutatrade_hub.parser_service import updater
@@ -13,6 +11,7 @@ from src.valutatrade_hub.parser_service.api_client import (
     ExchangeRateApiClient,
 )
 from src.valutatrade_hub.parser_service.storage import Storage
+
 
 def exit():
     """Выход из программы"""
@@ -310,19 +309,19 @@ def get_rate_action(
 
 
 @error_handler
-def show_rates(currency_filter: str | None, top_filter: int | None, base_currency: str | None, db: DatabaseManager):
+def show_rates(currency_filter: str | None, top_filter: int | None, base_currency: str | None, db: DatabaseManager): # noqa E501
     rates = db.load(app_config.get("RATES_FILE")) or {}
     pairs = rates.get("pairs") or {}
 
     if not pairs:
         print("Файл кеша пуст или не найден →")
-        print(f"Локальный кеш курсов пуст. Выполните '{const.CMD_UPDATE_RATES}', чтобы загрузить данные.")
+        print(f"Локальный кеш курсов пуст. Выполните '{const.CMD_UPDATE_RATES}', чтобы загрузить данные.") # noqa E501
     
     if currency_filter:
-        pairs = {key: value for key, value in pairs.items() if key.startswith(currency_filter)}
+        pairs = {key: value for key, value in pairs.items() if key.startswith(currency_filter)} # noqa E501
 
         if not pairs:
-            raise ValueError(f"\nВалюта не найдена →\nКурс для '{currency_filter}' не найден в кеше.")
+            raise ValueError(f"\nВалюта не найдена →\nКурс для '{currency_filter}' не найден в кеше.") # noqa E501
 
     if top_filter:
         pairs = dict(sorted(pairs.items(), key=lambda item: item[1].get("rate"), reverse=True)[:top_filter])  # noqa E501

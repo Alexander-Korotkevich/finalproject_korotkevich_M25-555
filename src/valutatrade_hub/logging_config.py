@@ -1,9 +1,10 @@
+import json
 import logging
 import logging.handlers
 from pathlib import Path
-import json
 
 from src.valutatrade_hub.const import LOG_ACTION_API
+
 
 def setup_action_logger():
     """Настройка логгера для доменных операций"""
@@ -56,7 +57,7 @@ def setup_action_logger():
             action = getattr(record, "action", "UNKNOWN")
 
             if action == LOG_ACTION_API:
-                return f"{record.levelname} {self.formatTime(record, '%Y-%m-%dT%H:%M:%S')} {record.getMessage()}"
+                return f"{record.levelname} {self.formatTime(record, '%Y-%m-%dT%H:%M:%S')} {record.getMessage()}" # noqa E501
             else:
 
               currency_code = getattr(record, "currency_code", False)
