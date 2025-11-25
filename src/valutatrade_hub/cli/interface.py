@@ -69,7 +69,7 @@ def run():
                     db,
                 )
             case const.CMD_UPDATE_RATES:
-                usecases.update_rates(command_args.get(const.KEY_WORD_SOURCE))
+                usecases.update_rates(command_args.get(const.KEY_WORD_SOURCE), db=db)
                 pass    
             case const.CMD_EXIT:
                 is_active = usecases.exit()

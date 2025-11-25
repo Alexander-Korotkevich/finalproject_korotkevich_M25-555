@@ -29,8 +29,10 @@ class ParserConfig:
     )
 
     # Пути
-    RATES_FILE_PATH: str = "data/rates.json"
-    HISTORY_FILE_PATH: str = "data/exchange_rates.json"
+    RATES_FILE_PATH: str = "rates.json"
+    HISTORY_FILE_PATH: str = "exchange_rates.json"
 
     # Сетевые параметры
     REQUEST_TIMEOUT: int = 10
+
+parser_config = ParserConfig()

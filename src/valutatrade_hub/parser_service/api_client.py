@@ -8,10 +8,8 @@ from src.valutatrade_hub.core.exceptions import (
     NetworkError,
     RateLimitError,
 )
-from src.valutatrade_hub.parser_service.config import ParserConfig
+from src.valutatrade_hub.parser_service.config import parser_config
 from src.valutatrade_hub.infra.settings import app_config
-
-config = ParserConfig()
 
 
 class BaseApiClient(ABC):
@@ -88,12 +86,12 @@ class CoinGeckoClient(BaseApiClient):
 
     def __init__(
         self,
-        base_url: str = config.COINGECKO_URL,
+        base_url: str = parser_config.COINGECKO_URL,
         vs_currency: str = app_config.get("BASE_CURRENCY"),
         timeout: int = 10,
     ):
         super().__init__(base_url, timeout)
-        self.crypto_ids = config.CRYPTO_ID_MAP
+        self.crypto_ids = parser_config.CRYPTO_ID_MAP
         self.vs_currency = vs_currency.lower()
 
     def fetch_rates(self) -> Dict[str, float]:
@@ -139,8 +137,8 @@ class ExchangeRateApiClient(BaseApiClient):
 
     def __init__(
         self,
-        api_key=config.EXCHANGERATE_API_KEY,
-        base_url: str = config.EXCHANGERATE_API_URL,
+        api_key=parser_config.EXCHANGERATE_API_KEY,
+        base_url: str = parser_config.EXCHANGERATE_API_URL,
         base_currency: str = app_config.get("BASE_CURRENCY"),
         timeout: int = 10,
     ):

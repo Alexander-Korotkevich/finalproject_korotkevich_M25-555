@@ -12,6 +12,7 @@ from src.valutatrade_hub.parser_service.api_client import (
     CoinGeckoClient,
     ExchangeRateApiClient,
 )
+from src.valutatrade_hub.parser_service.storage import Storage
 
 def exit():
     """Выход из программы"""
@@ -287,7 +288,7 @@ def get_rate_action(
 
 
 @error_handler
-def update_rates(source: str | None):
+def update_rates(source: str | None, db: DatabaseManager):
 
     clients = []
         
@@ -299,7 +300,7 @@ def update_rates(source: str | None):
         case _:
             clients = [CoinGeckoClient(), ExchangeRateApiClient()]   
         
-
-    rates_updater = updater.RatesUpdater(clients, None)
-
+    storage = Storage(db)
+    rates_updater = updater.RatesUpdater(clients, storage)
     rates_updater.run_update()
+
