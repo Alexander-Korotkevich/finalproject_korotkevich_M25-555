@@ -116,12 +116,13 @@ def show_portfolio(
         raise ValueError(f"Неизвестная базовая валюта '{base_currency}'")
 
     rates = db.load(app_config.get("RATES_FILE")) or {}
+    pairs = rates.get("pairs") or {}
 
     print(f"Портфель пользователя '{user.username}' (база: {base_currency}):")
 
     for key, value in user_portfolio.wallets.items():
         converted_currency = utils.convert_currency(
-            value.get("balance"), key, base_currency, rates
+            value.get("balance"), key, base_currency, pairs
         )
         if converted_currency is not None:
             print(
@@ -130,7 +131,7 @@ def show_portfolio(
 
     print("---------------------------------")
 
-    total_value = user_portfolio.get_total_value(rates, base_currency)
+    total_value = user_portfolio.get_total_value(pairs, base_currency)
 
     if total_value is not None:
         print(f"ИТОГО: {total_value} {base_currency}")
@@ -158,8 +159,9 @@ def buy(user: models.User, currency: str, amount: float, db):
     usd_wallet_data = user_portfolio.get_wallet(app_config.get("BASE_CURRENCY"))
 
     rates = db.load(app_config.get("RATES_FILE")) or {}
+    pairs = rates.get("pairs") or {}
     usd_amount = utils.convert_currency(
-        amount, currency, app_config.get("BASE_CURRENCY"), rates
+        amount, currency, app_config.get("BASE_CURRENCY"), pairs
     )
 
     if usd_amount is None:
@@ -176,7 +178,7 @@ def buy(user: models.User, currency: str, amount: float, db):
     cur_wallet = models.Wallet(currency, cur_wallet_data.get("balance"))
     cur_wallet.deposit(amount)
 
-    rate = utils.get_rate(currency, app_config.get("BASE_CURRENCY"), rates)
+    rate = utils.get_rate(currency, app_config.get("BASE_CURRENCY"), pairs)
 
     for _portfolio in portfolios:
         if _portfolio.get("user_id") == user.user_id:
@@ -231,10 +233,11 @@ def sell(user: models.User, currency: str, amount: float, db: DatabaseManager):
     cur_wallet.withdraw(amount)
 
     rates = db.load(app_config.get("RATES_FILE")) or {}
-    rate = utils.get_rate(currency, app_config.get("BASE_CURRENCY"), rates)
+    pairs = rates.get("pairs")
+    rate = utils.get_rate(currency, app_config.get("BASE_CURRENCY"), pairs)
 
     usd_amount = utils.convert_currency(
-        amount, currency, app_config.get("BASE_CURRENCY"), rates
+        amount, currency, app_config.get("BASE_CURRENCY"), pairs
     )
 
     usd_wallet = models.Wallet(
@@ -261,32 +264,6 @@ def sell(user: models.User, currency: str, amount: float, db: DatabaseManager):
     )
     print(f"Оценочная выручка: {usd_amount} USD")
 
-
-@error_handler
-def get_rate_action(
-    from_currency: str | None, to_currency: str | None, db: DatabaseManager
-):
-    if (from_currency not in const.CURRENCY) or (to_currency not in const.CURRENCY):
-        raise ValueError(
-            f"Невозможно конвертировать валюту {from_currency} в {to_currency}"
-        )
-
-    rates = db.load(app_config.get("RATES_FILE")) or {}
-    rate_key = f"{from_currency}_{to_currency}"
-    rate_data = rates.get(rate_key) or {}
-    is_old = utils.is_old_update(
-        rate_data.get("updated_at"), app_config.get("RATES_TTL_SECONDS")
-    )
-
-    if not rate_data or is_old:
-        raise RuntimeError("Нет данных и недоступен Parser")
-
-    print(
-        f"Курс {rate_key}: {rate_data.get('rate')} (обновлено: {rate_data.get("updated_at")})"  # noqa E501
-    )
-    print("Обратный курс BTC→USD: 59337.21")  # TODO:
-
-
 @error_handler
 def update_rates(source: str | None, db: DatabaseManager):
 
@@ -304,3 +281,55 @@ def update_rates(source: str | None, db: DatabaseManager):
     rates_updater = updater.RatesUpdater(clients, storage)
     rates_updater.run_update()
 
+@error_handler
+def get_rate_action(
+    from_currency: str | None, to_currency: str | None, db: DatabaseManager
+):
+    if (from_currency not in const.CURRENCY) or (to_currency not in const.CURRENCY):
+        raise ValueError(
+            f"Невозможно конвертировать валюту {from_currency} в {to_currency}"
+        )
+
+    rates = db.load(app_config.get("RATES_FILE")) or {}
+    pairs = rates.get("pairs") or {}
+    rate_key = f"{from_currency}_{to_currency}"
+    rate_data = pairs.get(rate_key) or {}
+    is_old = utils.is_old_update(
+        rate_data.get("updated_at"), app_config.get("RATES_TTL_SECONDS")
+    )
+
+    if not pairs or is_old:
+        update_rates(None, db)
+        get_rate_action(from_currency, to_currency, db)
+        return
+
+    print(
+        f"Курс {rate_key}: {rate_data.get('rate')} (обновлено: {rate_data.get("updated_at")})"  # noqa E501
+    )
+    print("Обратный курс BTC→USD: 59337.21")  # TODO:
+
+
+@error_handler
+def show_rates(currency_filter: str | None, top_filter: int | None, base_currency: str | None, db: DatabaseManager):
+    rates = db.load(app_config.get("RATES_FILE")) or {}
+    pairs = rates.get("pairs") or {}
+
+    if not pairs:
+        print("Файл кеша пуст или не найден →")
+        print(f"Локальный кеш курсов пуст. Выполните '{const.CMD_UPDATE_RATES}', чтобы загрузить данные.")
+    
+    if currency_filter:
+        pairs = {key: value for key, value in pairs.items() if key.startswith(currency_filter)}
+
+        if not pairs:
+            raise ValueError(f"\nВалюта не найдена →\nКурс для '{currency_filter}' не найден в кеше.")
+
+    if top_filter:
+        pairs = dict(sorted(pairs.items(), key=lambda item: item[1].get("rate"), reverse=True)[:top_filter])  # noqa E501
+        print(f"Rates from cache (updated at {pairs.get('last_refresh')}):")
+
+    if base_currency:
+        pairs = {key: value for key, value in pairs.items() if key.endswith(base_currency)}  # noqa E501    
+
+    for key, value in pairs.items():
+        print(f"- {key}: {value.get('rate')}")
