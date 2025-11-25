@@ -18,6 +18,20 @@ def exit():
     print("Выход из программы")
     return False
 
+def help():
+    print("Доступные команды:")
+    print("register --username <username> --password <password> - регистрация нового пользователя")
+    print("login --username <username> --password <password> - авторизация пользователя")
+    print("show-portfolio --base <optional base_currency>  - показать портфель")
+    print("buy --currency <currency> --amount <amount>   - купить валюту")
+    print("sell --currency <currency> --amount <amount>  - продать валюту")
+    print("get-rate --from <from_currency> --to <to_currency> - получить курс валюты")
+    print("update-rates --source <optional source> - обновить курсы валют")
+    print("show-rates --currency <optional currency> --base <optional base_currency> --top <optional top> - показать курсы валют")
+    print("exit - выход из программы")
+
+
+
 
 @error_handler
 @log_domain_action(const.LOG_ACTION_REGISTER)

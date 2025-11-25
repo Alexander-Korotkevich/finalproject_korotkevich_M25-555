@@ -44,7 +44,7 @@ def run():
                 base_currency = command_args.get(const.KEY_WORD_BASE)
                 if base_currency:
                     usecases.show_portfolio(
-                        user, db, command_args.get(const.KEY_WORD_BASE)
+                        user, db, base_currency
                     )
                 else:
                     usecases.show_portfolio(user, db)
@@ -74,6 +74,9 @@ def run():
                 usecases.show_rates(command_args.get(const.KEY_WORD_CURRENCY), 
                                     int(command_args.get(const.KEY_WORD_TOP) or 0), 
                                     command_args.get(const.KEY_WORD_BASE), db=db)
+                
+            case const.CMD_HELP:
+                usecases.help()    
             case const.CMD_EXIT:
                 is_active = usecases.exit()
                 continue

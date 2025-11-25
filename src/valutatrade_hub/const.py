@@ -7,6 +7,7 @@ CMD_SELL = "sell"
 CMD_GET_RATE = "get-rate"
 CMD_UPDATE_RATES = "update-rates"
 CMD_SHOW_RATES = "show-rates"
+CMD_HELP = "help"
 
 
 MIN_PASSWORD_LENGTH = 4
