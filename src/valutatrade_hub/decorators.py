@@ -78,7 +78,7 @@ class log_action:
                 return_value = func(*args, **kwargs)
 
                 # Добавляем verbose информацию если нужно
-                if self.verbose and self.action in [const.LOG_ACTION_SELL, const.LOG_ACTION_BUY]:
+                if self.verbose and self.action in [const.LOG_ACTION_SELL, const.LOG_ACTION_BUY]: # noqa E501
                     context_info = self._get_verbose_context(return_value, args, kwargs)
 
                 return return_value
