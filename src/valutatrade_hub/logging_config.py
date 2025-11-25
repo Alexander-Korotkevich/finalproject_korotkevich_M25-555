@@ -2,8 +2,8 @@ import logging
 import logging.handlers
 from pathlib import Path
 import json
-from datetime import datetime
 
+from src.valutatrade_hub.const import LOG_ACTION_API
 
 def setup_action_logger():
     """Настройка логгера для доменных операций"""
@@ -19,65 +19,83 @@ def setup_action_logger():
     # Форматтер в JSON
     class JsonFormatter(logging.Formatter):
         def format(self, record):
-            log_data = {
-                "timestamp": self.formatTime(record),
-                "level": record.levelname,
-                "action": getattr(record, "action", "UNKNOWN"),
-                "username": getattr(record, "username", "unknown"),
-                "user_id": getattr(record, "user_id", "unknown"),
-                "currency_code": getattr(record, "currency_code", ""),
-                "amount": getattr(record, "amount", 0),
-                "rate": getattr(record, "rate", 0),
-                "base_currency": getattr(record, "base_currency", ""),
-                "result": getattr(record, "result", "UNKNOWN"),
-                "error_type": getattr(record, "error_type", ""),
-                "error_message": getattr(record, "error_message", ""),
-                "context": getattr(record, "context", ""),
-                "module": record.name,
-                "function": record.funcName,
-            }
+            log_data = {}
+            action = getattr(record, "action", "UNKNOWN")
+
+            if action == LOG_ACTION_API:
+                log_data = {
+                  "timestamp": self.formatTime(record),
+                  "level": record.levelname,
+                  "action": action,
+                  "message": record.getMessage(),
+                }
+            else:
+              log_data = {
+                  "timestamp": self.formatTime(record),
+                  "level": record.levelname,
+                  "action": getattr(record, "action", "UNKNOWN"),
+                  "username": getattr(record, "username", "unknown"),
+                  "user_id": getattr(record, "user_id", "unknown"),
+                  "currency_code": getattr(record, "currency_code", ""),
+                  "amount": getattr(record, "amount", 0),
+                  "rate": getattr(record, "rate", 0),
+                  "base_currency": getattr(record, "base_currency", ""),
+                  "result": getattr(record, "result", "UNKNOWN"),
+                  "error_type": getattr(record, "error_type", ""),
+                  "error_message": getattr(record, "error_message", ""),
+                  "context": getattr(record, "context", ""),
+                  "module": record.name,
+                  "function": record.funcName,
+              }
+
             return json.dumps(log_data)
 
     # Форматтер для человекочитаемого вывода
     class HumanFormatter(logging.Formatter):
         def format(self, record):
-            currency_code = getattr(record, "currency_code", False)
-            currency_code_message = (
-                f"currency='{getattr(record, 'currency_code', '')}' "
-                if currency_code
-                else ""
-            )
-            amount = getattr(record, "amount", 0)
-            amount_message = f"amount={amount:.4f} " if amount else ""
-            rate = getattr(record, "rate", 0)
-            rate_message = f"rate={rate:.2f} " if rate else ""
-            base = getattr(record, "base_currency", "")
-            base_message = f"base='{base}' " if base else ""
+            action = getattr(record, "action", "UNKNOWN")
 
-            # Базовые поля
-            base_message = (
-                f"{record.levelname} {self.formatTime(record, '%Y-%m-%dT%H:%M:%S')} "
-                + f"{getattr(record, 'action', 'UNKNOWN')} "
-                + f"user='{getattr(record, 'username', 'unknown')}' "
-                + currency_code_message
-                + amount_message
-                + rate_message
-                + base_message
-                + f"result={getattr(record, 'result', 'UNKNOWN')}"
-            )
+            if action == LOG_ACTION_API:
+                return f"{record.levelname} {self.formatTime(record, '%Y-%m-%dT%H:%M:%S')} {record.getMessage()}"
+            else:
 
-            # Добавляем информацию об ошибке если есть
-            error_type = getattr(record, "error_type", "")
-            error_message = getattr(record, "error_message", "")
-            if error_type:
-                base_message += f" error={error_type}:{error_message}"
+              currency_code = getattr(record, "currency_code", False)
+              currency_code_message = (
+                  f"currency='{getattr(record, 'currency_code', '')}' "
+                  if currency_code
+                  else ""
+              )
+              amount = getattr(record, "amount", 0)
+              amount_message = f"amount={amount:.4f} " if amount else ""
+              rate = getattr(record, "rate", 0)
+              rate_message = f"rate={rate:.2f} " if rate else ""
+              base = getattr(record, "base_currency", "")
+              base_message = f"base='{base}' " if base else ""
 
-            # Добавляем контекст если есть
-            context = getattr(record, "context", "")
-            if context:
-                base_message += f" {context}"
+              # Базовые поля
+              base_message = (
+                  f"{record.levelname} {self.formatTime(record, '%Y-%m-%dT%H:%M:%S')} "
+                  + f"{getattr(record, 'action', 'UNKNOWN')} "
+                  + f"user='{getattr(record, 'username', 'unknown')}' "
+                  + currency_code_message
+                  + amount_message
+                  + rate_message
+                  + base_message
+                  + f"result={getattr(record, 'result', 'UNKNOWN')}"
+              )
 
-            return base_message
+              # Добавляем информацию об ошибке если есть
+              error_type = getattr(record, "error_type", "")
+              error_message = getattr(record, "error_message", "")
+              if error_type:
+                  base_message += f" error={error_type}:{error_message}"
+
+              # Добавляем контекст если есть
+              context = getattr(record, "context", "")
+              if context:
+                  base_message += f" {context}"
+
+              return base_message
 
     # File handler с ротацией (JSON формат)
     file_handler = logging.handlers.RotatingFileHandler(

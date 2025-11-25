@@ -2,6 +2,7 @@ from datetime import datetime
 import functools
 from typing import Any, Callable, TypeVar
 
+from src.valutatrade_hub import const
 from src.valutatrade_hub.core import utils
 from src.valutatrade_hub.core.exceptions import (
     CurrencyNotFoundError,
@@ -123,11 +124,11 @@ class log_action:
         context = {}
 
         match self.action:
-            case "LOGIN":
+            case const.LOG_ACTION_LOGIN:
                 context["username"] = args[0]
-            case "REGISTER":
+            case const.LOG_ACTION_REGISTER:
                 context["username"] = args[0]
-            case "SELL" | "BUY":
+            case const.LOG_ACTION_SELL | const.LOG_ACTION_BUY:
                 db = args[3]
 
                 # Извлекаем портфель

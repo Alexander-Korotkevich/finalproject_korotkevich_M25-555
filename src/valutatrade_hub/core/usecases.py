@@ -20,7 +20,7 @@ def exit():
 
 
 @error_handler
-@log_domain_action("REGISTER", verbose=True)
+@log_domain_action(const.LOG_ACTION_REGISTER, verbose=True)
 def register(username: str | None, password: str | None, db: DatabaseManager):
     """Регистрация нового пользователя"""
 
@@ -61,7 +61,7 @@ def register(username: str | None, password: str | None, db: DatabaseManager):
 
 
 @error_handler
-@log_domain_action("LOGIN", verbose=True)
+@log_domain_action(const.LOG_ACTION_LOGIN, verbose=True)
 def login(username: str | None, password: str | None, db: DatabaseManager):
     """Вход в систему"""
 
@@ -136,7 +136,7 @@ def show_portfolio(
 
 
 @error_handler
-@log_domain_action("BUY", verbose=True)
+@log_domain_action(const.LOG_ACTION_BUY, verbose=True)
 @check_auth
 def buy(user: models.User, currency: str, amount: float, db):
     """Купить валюту"""
@@ -198,7 +198,7 @@ def buy(user: models.User, currency: str, amount: float, db):
 
 
 @error_handler
-@log_domain_action("SELL", verbose=True)
+@log_domain_action(const.LOG_ACTION_SELL, verbose=True)
 @check_auth
 def sell(user: models.User, currency: str, amount: float, db: DatabaseManager):
     """Продать валюту"""
@@ -288,12 +288,18 @@ def get_rate_action(
 
 @error_handler
 def update_rates(source: str | None):
-    coin_gecko = CoinGeckoClient()
 
-    result1 = coin_gecko.fetch_rates()
-    print('result1', result1)
+    clients = []
+        
+    match source:
+        case "coingecko":
+            clients = [CoinGeckoClient()]
+        case "exchangerate":
+            clients = [ExchangeRateApiClient()]    
+        case _:
+            clients = [CoinGeckoClient(), ExchangeRateApiClient()]   
+        
 
-    exchange_rate = ExchangeRateApiClient()
+    rates_updater = updater.RatesUpdater(clients, None)
 
-    result2 = exchange_rate.fetch_rates()
-    print('result2',result2)
+    rates_updater.run_update()
